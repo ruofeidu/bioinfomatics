@@ -1,0 +1,298 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<style>
+body {
+margin: 0px;
+padding: 0px;
+}
+</style>
+<!--
+<script href="kinetic-v4.3.1.js" language="javascript"> </script>
+-->
+<!--
+<script src='http://d3lp1msu2r81bx.cloudfront.net/kjs/js/lib/kinetic-v4.3.1.js'></script>
+-->
+
+<script src='kinetic-v5.1.0.js'></script>
+
+
+</head>
+<body>
+
+<div id="verita"></div>
+
+<script>
+function gup( name, url ) {
+	if (!url) url = location.href;
+	name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+	var regexS = "[\\?&]"+name+"=([^&#]*)";
+	var regex = new RegExp( regexS );
+	var results = regex.exec( url );
+	return results == null ? null : results[1];
+}
+	
+var stage = new Kinetic.Stage({
+container: 'verita',
+width: 1024*3,
+height: 768*2
+});
+var layer = new Kinetic.Layer();
+
+var setting = {
+	mainColor: 'black',
+	lineColor: 'black',
+	helixHeight: 20,
+	fontSize: 20,
+	fontOffsetX: 250,
+	lineNum: 1,
+	scale: 4,
+};
+
+var origin = {
+	x: 300,
+	y: 50
+};
+
+function renderName(ox, oy, t) {
+var text = new Kinetic.Text({
+  x: ox,
+  y: oy,
+  text: t,
+  fontSize: setting.fontSize,
+  fontFamily: 'Times New Roman',
+  fill: 'black'
+});
+layer.add(text); 
+}
+
+var swidth = gup('q', document.location.search); 
+if (swidth == null) swidth = 1; 
+
+function renderSeq(ox, oy, len) {
+var l = new Kinetic.Line({
+	x: ox, 
+	y: oy, 
+	points: [0, 0, len * setting.scale, 0],
+	stroke: setting.mainColor,
+	strokeWidth: swidth,
+	tension: 1
+});
+layer.add(l); 
+}
+
+function renderHelix(ox, oy, begin, end) {
+var r = new Kinetic.Rect({
+	x: ox + begin * setting.scale,
+	y: oy - setting.helixHeight / 2,
+	width: (end - begin) * setting.scale,
+	height: setting.helixHeight,
+	fill: '#7F7F7F',
+	stroke: 'black',
+	strokeWidth: swidth,
+	cornerRadius: 3
+}); 
+layer.add(r); 
+}
+
+
+function renderM(ox, oy, spot) {
+var l = new Kinetic.Line({
+	x: ox + spot * setting.scale, 
+	y: oy - setting.helixHeight / 2, 
+	points: [0, 0, 0, setting.helixHeight],
+	stroke: setting.mainColor,
+	strokeWidth: swidth,
+	tension: 1
+});
+layer.add(l); 
+}
+
+function renderCluster(ox, oy, begin, end) {
+var r = new Kinetic.Rect({
+	x: ox + begin * setting.scale,
+	y: oy - setting.helixHeight / 2,
+	width: (end - begin) * setting.scale,
+	height: setting.helixHeight,
+	fill: 'white',
+	stroke: 'black',
+	strokeWidth: swidth,
+	cornerRadius: 3
+}); 
+layer.add(r); 
+}
+
+function segment (beg, end) {
+	this.beg = beg;
+	this.end = end; 
+}
+
+function protein (name, seq, helix) {
+    this.name = name;
+    this.seq = seq;
+    if (helix === null) {
+    	this.numHelix = 0; 
+    	this.cut = 0; 
+    } else {
+    	this.helix = helix.split(",");
+    	this.numHelix = this.helix.length / 2; 
+    	this.cut = this.helix[0]; 
+    }
+
+    // count M
+    this.M = Array(); 
+    for (var i = 1; i < this.cut; ++i) {
+    	if (seq[i] === 'M' || seq[i] === 'm') {
+    		this.M.push(i); 
+    	}
+    }
+
+    // get cluster
+    this.cluster = Array(); 
+    var p = -10, q = 0; 
+    var beg = -1, end = -1; 
+    var onCluster = false; 
+
+    for (var i = 0; i < this.M.length - 1; ++i) {
+    	q = this.M[i]; 
+    	// cluster when smaller than 2
+    	if (q - p <= 2) {
+    		if (!onCluster) {
+    			beg = p;
+    			end = q; 
+    			onCluster = true;  
+    		} else {
+    			end = q; 
+    		}
+    	} else {
+    		if (onCluster) {
+    			this.cluster.push(new segment(beg, end)); 
+    			onCluster = false; 
+    		}
+    	}
+    	p = q; 
+    }
+
+	if (onCluster) {
+		this.cluster.push(new segment(beg, q)); 
+		onCluster = false; 
+	}
+
+	// get segment
+	this.segment = Array(); 
+    for (var i = 0; i < this.M.length; ++i) {
+    	var ok = true; 
+    	for (var j = 0; j < this.cluster.length; ++j) {
+    		if (this.M[i] >= this.cluster[j].beg && this.M[i] <= this.cluster[j].end) {
+    			ok = false; 
+    			break; 
+    		}
+    	}
+    	if (ok) this.segment.push(this.M[i]); 
+    }
+}
+
+
+var b = Array(); 
+b.push(new protein("HomoSapiensCtr1", "MDHSHHMGMSYMDSNSTMQPSHHHPTTSASHSHGGGDSSMMMMPMTFYFGFKNVELLFSGLVINTAGEMAGAFVAVFLLAMFYEGLKIARESLLRKSQVSIRYNSMPVPGPNGTILMETHKTVGQQMLSFPHLLQTVLHIIQVVISYFLMLIFMTYNGYLCIAVAAGAGTGYFLFSWKKAVVVDITEHCH", "58,80,133,155,159,177"));
+
+b.push(new protein("HomoSapiensCtr2", "mamhfifsdtavllfdfwsvhspagmalsvlvllllavlyegikvgkakllnqvlvnlptsisqqtiaetdgdsagsdsfpvgrthhrwylchfgqslihviqvvigyfimlavmsyntwiflgvvlgsavgyylaypllsta", "22,40,97,115,119,141"));
+
+b.push(new protein("SaccharomycescerevisiaeCtr1", "MEGMNMGSSMNMDAMSSASKTVASSMASMSMDAMSSASKTILSSMSSMSMEAMSSASKTLASTMSSMASMSMGSSSMSGMSMSMSSTPTSSASAQTTSDSSMSGMSGMSSSDNSSSSGMDMDMSMGMNYYLTPTYKNYPVLFHHLHANNSGKAFGIFLLFVVAAFVYKLLLFVSWCLEVHWFKKWDKQNKYSTLPSANSKDEGKHYDTENNFEIQGLPKLPNLLSDIFVPSLMDLFHDIIRAFLVFTSTMIIYMLMLATMSFVLTYVFAVITGLALSEVFFNRCKIAMLKRWDIQREIQKAKSCPGFGNCQCGRHPEPSPDPIAVADTTSGSDQSTRLEKNNESKVAISENNQKKTPTQEEGCNCATDSGKNQANIERDILENSKLQEQSGNMDQNLLPAEKFTHN", "155,177,242,260,264,282"));
+
+
+b.push(new protein("SaccharomycescerevisiaeCtr2", "mddkktwstvtlrtfnqlvtssligyskkmdsmnhkmegnaghdhsdmhmgdgddtcsmnmlfswsykntcvvfewwhiktlpglilsclaifglaylyeylkycvhkrqlsqrvllpnrsltkinqadkvsnsilyglqvgfsfmlmlvfmtyngwlmlavvcgaiwgnyswctsyspeiddsslach", "76,98,146,168"));
+
+b.push(new protein("SaccharomycescerevisiaeCtr3", "mnmggssstaakkatckismlwnwytidtcfiarswrndtkgkfagscigcfalvvvaqwltrfsrqfdvellkrqkikhlasyspeeyvvkcgeedaksdieelqgfynepswkttlislqksfiysfyvwgprrlnepeddllkkvlscctlitpvdlyptfldhmirvtifvlqwglsyiimllfmyyngyiiiscligaivgrfifcyeplgslgangsaqgtvsydkesddrkccl", "44,62,168,190,193,211"));
+
+b.push(new protein("MusmusculusCtr1", "mnhmgmnhmemhhhmgmnhtddnitmpphhhpttsashshgggdsmmmmpmtfyfdfknvnllfsglvintpgemagafvavfllamfyeglkiaregllrksqvsirynsmpvpgpngtilmethktvgqqmlsfphllqtvlhiiqvvisyflmlifmtyngylciavaagagtgyflfswkkavvvditehch", "62,84,139,157,164,182"));
+
+b.push(new protein("MusmusculusCtr2", "mpmhfifsdeavllfdfwrvhsptgmalsvlvvlllavlyegikvgkakllhktleslpatnsqqfilgpdqdstgsrstsdnrtrlrwflcyfgqslvhviqvvigyfvmlavmsyntwiflgvvlgsavgyylaypllnmt", "25,43,93,115,119,141"));
+
+b.push(new protein("DrosophilamelanogasterCtr1AisoformA/B", "mdhahhsapgvdhsmhhdhvgmhhdhsgipaataspmdaasmfdlipdtsdlqashaghaahgahnhgggsgtgmehmmpmafhfgynetilfswwhietvagligsmiaifllalmyeglkyyreylfwktynlleyrpvtgpqrnpeapripspaaaapspvqpsmlsinhllqtllhvlqvtlsfllmlifmtynvwlclmvvlgaavgyflfcwkksvivdvtehch", "95,117,178,196,200,218"));
+
+b.push(new protein("DrosophilamelanogasterCtr1AisoformC/D", "mdhahhsapgvdhsmhhdhvgmhhdhsgipaataspmdaasmfdlipdtsdlqashaghaahgahnhgggsgtgmehmmpmafhfgynetilfswwhietvagligsmiaifllalmyeglkyyreylfwktynlleyrpvtgpqrnpeapripspaaaapspvqyvgevvhkqppsmlsinhllqtllhvlqvtlsfllmlifmtynvwlclmvvlgaavgyflfcwkksvivdvtehch", "95,117,188,206,210,228"));
+
+b.push(new protein("DrosophilamelanogasterCtr1B", "mdhgsddststakscpmimvfhaghcerilwrgwvastvtefvlsalaiflvsflyealkflrqqlarrearraseqlaaeqrrkneapaaggccseaplaepreqtywqrlfasshivqsllnllqivisyllmlifmtfnywlclavilglglgyfffgwnkknpdeseccp", "34,56,118,140,144,162"));
+
+b.push(new protein("DrosophilamelanogasterCtr1C", "mdhhgvdaseghvhhhashgspepvppssgheghhspemnhhgnhgehtkhghheggahdmsmamffhtgdsetilfkfwrtesamaltlscllifmvavlyealkffrewlfswdrkrlaggrdqynrprryreanynynqptypprtnqqsgtqvyayrprspsmpplqppgrsspqaqssliltqhthhhvqentppagrttklkvfcsgmhilqtflhvlqvlisfllmlvfmtfnvwlcvavllgagvgyyifcafrtnvqehcn", "84,102,213,235,239,261"));
+
+b.push(new protein("DaniorerioCtr1", "mdsshshhhveettmpspasgdhgghltttgnghgdhmmmmqmtfyfgyknvellfaglvintpgemagacigvfllavlyeglkigrevllrrnqvnvrynsmpvpgsdgtvlmethktvgqrmlsmahflqtllhiiqvvvsyflmlvfmtyngylciavaagaglgyflfswkkavvvditehch", "56,78,131,153,157,175"));
+
+b.push(new protein("DaniorerioCtr2", "mnmyfegssnvtllfnfwnvhgpagmvlsvfvvllltvvyellkvwkitvgkqksspntspstamsfsqnkqscfatvikcqegssslanspsevsltptentdnaadsstaakrrrwilhclqtaihivqvtlgymlmlcvmsyniwiflgvitgsvlgyfvafpllnht", "25,43,118,140,146,168"));
+
+b.push(new protein("F27C1.2a", "MGTQLAILGWLAVALVVAAAENKSAYAQAADNFLDELAGKEVEAVPVPDEKDQNEHHEHSSHGSHAGHGGHEGHMMKMWFHGGFEEVILFDFWRTDSLFGMLLSCAAIFIMGATYEGVKWFRVFLQMTQTQAQVLANKSCVETTRSSGGTCHQSVTHSQSNKPQSEPFLISASVARTPATSPFSPQRLIQMLLYIFQLVLAYWLMLIVMTYNTYLTAAVVLGAGFGHWLFAVLQLRNCDGEVTDSFQTDACH", "4,22,97,115,188,206,213,235"));
+
+b.push(new protein("F27C1.2b", "MGTQLAILGWLAVALVVAAAENKSAYAQAADNFLDELAGKEVEAVPVPDEKDQNEHHEHSSHGSHAGHGGHEGHMMKMWFHGGFEEVILFDFWRTDSLFGMLLSCAAIFIMGATYEGVKWFRVFLQMTQTQAQVLANKSCVEFALQTTRSSGGTCHQSVTHSQSNKPQSEPFLISASVARTPATSPFSPQRLIQMLLYIFQLVLAYWLMLIVMTYNTYLTAAVVLGAGFGHWLFAVLQLRNCDGEVTDSFQTDACH", "4,22,97,115,192,210,217,239"));
+
+b.push(new protein("K12C11.3a", "MSLNTSTMAPMGKTTKMWQWYHVELNDVILFENWKVQDMTTMIWSCFVVGFAGFLLEFLKYSKWAASMQMRPAGDVDRRTKFWARHVVQAMYHFWQTLLAFILMNIYMTFNVYICLSLCLGLTIGYFFFGSRL", "40,62,82,104,108,130"));
+
+b.push(new protein("K12C11.3b", "MSLNTSTMAPMGKTTKMWQWYHVELNDVILFENWKVQDMTSLYMPLSMPRTNNRLFFLRISALNRSIMFI", null));
+
+b.push(new protein("K12C11.3c", "MSLNTSTMAPMGKTTKMWQWYHVELNDVILFENWKVQDMTTMIWSCFVVGFAGFLLEFLKYSKWAASMQMRPAGDVDRRTKYGGCVVPSENRKKLFWARHVVQAMYHFWQTLLAFILMNIYMTFNVYICLSLCLGLTIGYFFFGSRL", "41,59,95,117,121,143"));
+
+b.push(new protein("K12C11.6", "MKISGPPFMHMWFHTKTQDTVLFKTWNVTDTPTMVWVCCIIVVAGILLELIKFLRWKIEKWHKNRDELVSRSYISRLFSPIHIGQTILFMVQLSFSYILMLLFMTFSVWLGIAVVVGLGIGYLAFGARMEQS", "33,51,72,94,103,125"));
+
+b.push(new protein("K12C11.7a", "MMMDMMQMYFHFRIQEPILFRQWKPTDTTGYVFSCISLFFIAFCLELLKFGRQRMTRTVKEKLAVDCCCSTPEGIWEIPEEPEPSPRGKLASLAPFTMESISSWRHFASSFLFFLQNFVDYSLMLVAMTYNYPLFFSLLAGHAIGYFFVGPLMTVKEVENTGNCCS", "28,50,107,129,133,155"));
+
+b.push(new protein("K12C11.7b", "MESISSWRHFASSFLFFLQNFVDYSLMLVAMTYNYPLFFSLLAGHAIGYFFVGPLMTVKEVENTGNCCS", "13,31,35,53"));
+
+b.push(new protein("F58G6.9a", "MNMMNMSMTTMSGPVAKRHRMWMWYHVDVEDTVLFKSWTVFDAGTMVWTCFVVAAAGILLEALKYARWATEERMKIDQENVDSKTKYGGIKIPGKSEKYNFWKRHIIDSLYHFWQLLLAYILMNVYMVFSVYICLSLCFGLAIGHFVFASRTGSSL", "38,60,128,150"));
+
+b.push(new protein("F58G6.9b1-2", "MNMMNMSMTTMSGPVAKRHRMWMWYHVDVEDTVLFKSWTVFDAGTMVWTCFVVAAAGILLEALKYARWATEERMKIDQENVDSKTNFWKRHIIDSLYHFWQLLLAYILMNVYMVFSVYICLSLCFGLAIGHFVFASRTGSSL", "38,60,114,136"));
+
+b.push(new protein("F58G6.9c", "MNMMNMSMTTMSGPVAKRHRMWMWYHVDVEDTVLFKSWTVFDAGTMVWTCFVVAAAGILLEALKYARWATEERMKIDQENVDSKTKYGGIKIPGKSEKYKWVLLGRK", "38,60"));
+
+b.push(new protein("F58G6.3", "MNHNSMDMDMNQGPFMWMWFHTKPQDTVLFSTWNITSAGKMVWACILVAIAGIILEAIKYNRRLIQKRQSPSKKESYISRLLSTMHFFQTFLFFVQLGFSYCLMLIFMTFSIWLGLAVVIGLSIGFLIFGGRSE", "33,55,76,98,107,129"));
+
+b.push(new protein("F58G6.7", "MMHMMMEMYFHFRIEEPILFREWKPLNTTAYVFSCIEIFLIAFCLEALKFGRTKLSPKVKIVEKKVDCCCSTEKDGLWNIPETIPLTQKTVTLAPFTRDSLISKFHMASSLLVFVQHFIDYSLMLVSMTYNWPIFLSLLAGHTTGYFFLGPMMTVEESEAAGSCCS", "29,51,101,119,128,150"));
+
+b.push(new protein("F01G12.1", "MEVLKSVCKTLFLVDFQNNECQKLRNRHFLTTLQEKQIENALSEIVGDQPPHDLTLNHKEESLYDMLVASVRAGRESHFELDQLDVHTETNQSGHDHHIHNNEEHKHHNMRSHDHHTMKMWFHWGFDEVVLFDFWRIDDKNANLFFFFVNLTRGGRQTIISGKSENWQISGIEISGKSANRQLPTCRICRKNGNLPKNFFMKDGRALREDFKDNNASSPLVNHSRSTTPEVRHPGPLSVVRLTQAVLYIVQLVFAYWLMLIVMTYNIWLTLAVILGAGFGHWIFAVLHFANPNGEAADSIATDACH", "242,260,267,289"));
+var standard = b[b.length - 1].cut; 
+
+b.push(new protein("F31E8.4", "MDMDMTLHFGEREKILFSWWKTGSLSGMAVSMLITFLLCILYEAIKSFRYFLAVWNNQKRQQRHAEASITNPQNSGGDNISEDSIHIAPLVQLSGFTKRLFTSYRLAQGALYGLQALLAYTLMLIAMTYNMNLILSIVVGEAVGYFLFTGNPLVEQHLTDCC", "19,41,106,128,132,154"));
+
+b.push(new protein("Y58A7A.1a", "MSFHFGTEETILFDFWKTETAVGIAVACFITVLLAFLMETLRFFRDYRKAQTQLHQPPISPEDRLKRSPQLDLIDPLLQLFQLTIAYFLMLIFMTFNAYLCFFTVVGEVVCHLLYRTLYPNLNSSSAGHC", "20,38,85,107"));
+
+b.push(new protein("Y58A7A.1b", "MDHSQHHHVHKGTIGNTAVAQTKSSDHMMMNHAMSFHFGTEETILFDFWKTETAVGIAVACFITVLLAFLMETLRFFRDYRKAQTQLHQPPISPEDRLKRSPQLDLIDPLLQLFQLTIAYFLMLIFMTFNAYLCFFTVVGEVVCHLLYRTLYPNLNSSSAGHC", "53,71,118,140"));
+
+//b.push(new protein("HomoSapiensCtr2", "", ""));
+
+var ox = origin.x; 
+var oy = origin.y; 
+
+var i = 0; 
+
+for (var i = 0; i < b.length; ++i) {
+	var x = b[i]; 
+	ox = origin.x; 
+	 
+	//renderName(ox-setting.fontOffsetX, oy-setting.fontSize/2, x.name );
+	
+	ox = origin.x + (parseInt(standard) - parseInt(x.cut)) * setting.scale; 
+	
+	renderSeq(ox, oy, x.seq.length);
+
+	for (var j = 0; j < x.numHelix; ++j) {
+		renderHelix(ox, oy, x.helix[j*2], x.helix[j*2+1]); 
+	}
+	for (var j = 0; j < x.segment.length; ++j) {
+		renderM(ox, oy, x.segment[j]); 
+	}
+	for (var j = 0; j < x.cluster.length; ++j){
+		renderCluster(ox, oy, x.cluster[j].beg, x.cluster[j].end); 
+	}
+	oy += setting.fontSize * 2; 
+}
+
+str = "";
+for (var i = 0; i < b.length; ++i) {
+	str = str + b[i].name + "\r\n"; 
+}
+console.log(str); 
+
+stage.add(layer);
+
+</script>
+</body>
+</html>      

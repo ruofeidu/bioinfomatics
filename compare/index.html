@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Compare Text with Url | Verita</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+<style>
+.normal {
+	background-color: #eeeeee;
+	padding: 8px; 
+	text-align: center;
+}
+
+.plagiarism {
+	background-color: #d7edff; 
+	padding: 8px; 
+	text-align: center;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<div class="row" align="center">
+<h1>Compare Text with Url</h1>
+</div>
+
+<div class="row" align="center">
+  <div class="col-md-6">
+  Text A
+  </div>
+
+  <div class="col-md-6">
+  Text B
+  </div>
+</div>
+
+<div class="row" align="center">
+  <div class="col-md-6">
+  <textarea rows="12" id="in_a" style="width:100%; font-size:8pt">
+A recent study on epigenetics aided in showing how a father’s environmental history is can possible be passed down to offspring. Epigenetics is the study of inheritable traits that are carried outside the genome and in an experiment performed by Oliver J. Rando, MD, PhD the mice that were born to fathers that were continuously exposed to nicotine showed clear nicotine and other chemical tolerance. Several studies conducted in the field of epigenetics have linked things like anxiety and diet to affecting offspring. Rando assessed a singular molecular interaction, by providing male mice with access to nicotine in order to figure out whether offspring were more or less sensitive to nicotine. This would also help determine if offspring response was specific to nicotine or extended to other chemicals.
+            Rando discovered that offspring of nicotine-exposed fathers, in comparison to fathers with no previous nicotine exposure, were protected from toxic levels of nicotine as well as cocaine (which acts through a different molecular pathway). Rando also tested whether multiple distinct molecules would affect drug resistance by testing mecamylamine. Mecamylamine blocks nicotine receptors and aids helping smokers quit smoking. The offspring of those mice still showed signs of the same chemical resistance. This discovery can help determine whether or not the same effect occurs in humans.
+  </textarea>
+  </div>
+
+  <div class="col-md-6">
+  <textarea rows="12" id="in_b" style="width:100%; font-size:8pt">
+  http://www.umassmed.edu/news/news-archives/2017/02/umms-epigenetics-researcher-oliver-rando-explorers-whether-offspring-inherit-drug-protection/
+ </textarea>
+  </div>
+</div>
+
+
+<div class="row" align="center">
+  <button type="button" id="compare">Compare with Brute Force Approach</button>
+</div>
+
+<div class="row" align="center">
+  <div id="textA" class="col-md-5">
+  Text A Statistics
+  </div>
+  <div id="status" class="col-md-2">
+  Status
+  </div>
+
+  <div id="textB" class="col-md-5">
+  Text A Statistics
+  </div>
+</div>
+
+<div id="result">
+
+</div>
+
+  
+<script src="js/jquery-1.10.2.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
