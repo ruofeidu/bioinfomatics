@@ -237,7 +237,7 @@ var Compare = function(_a, _b) {
 	var lastJ = 0;
 	var i = 0;
 	var itr = 0; 
-	var MAX_ITR = 10000000; 
+	var MAX_ITR = 1000000000; 
 	
 	var normal_a = "", normal_b = ""; 
 	var plagiarism_a = "", normal_b = "";
@@ -263,7 +263,6 @@ var Compare = function(_a, _b) {
 				maxLength = curLength; 
 				maxJ = j; 
 			}
-			if (++itr > MAX_ITR) break; 
 		}
 		
 		if (maxSames >= MIN_NUM_WORDS && maxLength >= MIN_LENGTH) {
@@ -287,7 +286,6 @@ var Compare = function(_a, _b) {
 			normal_a += (normal_a.length == 0) ? A[i] : (" " + A[i]); 
 			++i; 
 		}
-		if (++itr > MAX_ITR) break; 
 	}
 	
 	if (normal_a.length > 0 || lastJ != maxJ) {
